@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0f0e12">
+<title>Our Private World</title>
+<link rel="stylesheet" href="/css/style.css">
+<script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js"}}</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="vignette"></div><div id="fade"><i></i><i></i></div><div id="banner"></div>
+<div id="loading"><p>Loading…</p></div>
+
+<!-- Main menu -->
+<section id="menu" class="screen">
+  <div class="card menu-card">
+    <h1>Our Private World</h1>
+    <p class="muted">A museum of memories, a home and a moonlit garden — just for two.</p>
+    <label class="field">Your name<input id="name" maxlength="20" placeholder="e.g. Alex" autocomplete="nickname"></label>
+    <button id="btn-create" class="btn primary">Create Room</button>
+    <div class="or"><span>or join your partner</span></div>
+    <div class="row"><input id="join-code" placeholder="Room code or link" autocapitalize="characters" autocomplete="off"><button id="btn-join" class="btn">Join Room</button></div>
+    <p id="join-hint" class="muted small"></p>
+    <button id="btn-resume" class="btn ghost" hidden></button>
+    <div class="row two"><button id="btn-custom" class="btn ghost">Customize Character</button><button id="btn-menu-settings" class="btn ghost">Settings</button></div>
+    <p id="menu-err" class="err"></p>
+  </div>
+</section>
+
+<!-- Character customization -->
+<section id="custom" class="screen" hidden>
+  <div class="custom-wrap">
+    <div class="preview"><canvas id="custom-canvas"></canvas><p class="muted small">Drag to rotate</p></div>
+    <div class="card custom-side"><h2>Your Character</h2><div id="custom-panel"></div>
+      <div class="row two sticky"><button id="custom-cancel" class="btn ghost">Cancel</button><button id="custom-save" class="btn primary">Save look</button></div></div>
+  </div>
+</section>
+
+<!-- HUD -->
+<div id="hud" hidden>
+  <div class="topleft">
+    <div class="chip"><span id="conn-dot" class="dot"></span><span id="conn-text">Connecting…</span></div>
+    <div class="chip" id="peer-chip"><span class="wave"><i></i><i></i><i></i></span><span id="peer-text">Waiting for your partner…</span></div>
+    <div class="chip small" id="voice-chip"><span id="voice-text" class="idle">Voice: waiting for partner</span></div>
+  </div>
+  <div class="topright">
+    <button id="b-voice" class="ibtn off" title="Enable microphone (V)"><svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11z"/></svg><em id="mic-state">Mic off</em></button>
+    <button id="b-photos" class="ibtn" title="Photo gallery"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM6 17h12l-4-5-3 4-2-2z"/></svg><em>Photos</em></button>
+    <button id="b-map" class="ibtn" title="Travel"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg><em>Travel</em></button>
+    <button id="b-emote" class="ibtn" title="Gestures (1-5)"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-3 7a1.3 1.3 0 1 1 0 2.6A1.3 1.3 0 0 1 9 9zm6 0a1.3 1.3 0 1 1 0 2.6A1.3 1.3 0 0 1 15 9zm-3 9a5 5 0 0 1-4.5-3h9A5 5 0 0 1 12 18z"/></svg><em>Gestures</em></button>
+    <button id="b-chat" class="ibtn" title="Chat (Enter)"><svg viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 1-2z"/></svg><em>Chat</em></button>
+    <button id="b-invite" class="ibtn" title="Invite"><svg viewBox="0 0 24 24"><path d="M15 8a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM6 10V7H4v3H1v2h3v3h2v-3h3v-2zm9 1c-2.7 0-8 1.3-8 4v3h16v-3c0-2.7-5.3-4-8-4z"/></svg><em>Invite</em></button>
+    <button id="b-custom" class="ibtn" title="Customize"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3 0-8 1.5-8 4.5V21h16v-2.5c0-3-5-4.5-8-4.5z"/></svg><em>Look</em></button>
+    <button id="b-settings" class="ibtn" title="Settings"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7 7 0 0 0-1.7-1L15 3.3h-4L10.7 6a7 7 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7 7 0 0 0 1.7 1l.3 2.7h4l.3-2.7a7 7 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5A3.5 3.5 0 1 1 16.5 12 3.5 3.5 0 0 1 13 15.5z"/></svg><em>Settings</em></button>
+  </div>
+  <div id="prompt" hidden></div>
+  <button id="b-hug" class="btn primary floating" hidden>🤗 Hug</button>
+  <div id="emotes" class="panel mini" hidden>
+    <button data-e="wave">👋 Wave <small>1</small></button><button data-e="dance">💃 Dance <small>2</small></button><button data-e="clap">👏 Clap <small>3</small></button><button data-e="bow">🙇 Bow <small>4</small></button><button data-e="heart">❤️ Heart <small>5</small></button>
+  </div>
+  <div id="touch">
+    <div id="joy"><div id="joy-knob"></div></div>
+    <div class="tbtns"><button id="btn-act">●</button><button id="btn-jump">⤒</button><button id="btn-run">Run</button></div>
+  </div>
+  <div id="chat"><div id="chat-log"></div><div id="chat-row"><input id="chat-input" maxlength="200" placeholder="Press Enter to chat…" autocomplete="off"><button id="chat-send" class="btn">Send</button></div></div>
+  <div class="hint">WASD move · Shift run · Space jump · drag to look · scroll zoom · E interact · Enter chat · V mute</div>
+</div>
+
+<!-- Panels -->
+<div id="invite" class="panel card" hidden>
+  <button class="x" data-close>×</button><h2>Invite your partner</h2>
+  <p class="muted">Share this link or room code. Only two people can ever be in this room.</p>
+  <div class="code" id="invite-code">------</div>
+  <div class="row"><input id="invite-link" readonly><button id="copy-link" class="btn">Copy link</button></div>
+  <div class="row two"><button id="copy-code" class="btn ghost">Copy code</button><button id="b-share" class="btn ghost" hidden>Share…</button></div>
+</div>
+<div id="map" class="panel card" hidden>
+  <button class="x" data-close>×</button><h2>Travel</h2>
+  <button class="loc" data-loc="museum"><b>Museum</b><span>Four exhibition rooms of your photographs</span></button>
+  <button class="loc" data-loc="house"><b>House</b><span>Living room, kitchen, bedroom, balcony &amp; lawn</span></button>
+  <button class="loc" data-loc="garden"><b>Garden</b><span>Moonlit paths, pond, benches &amp; fireflies</span></button>
+</div>
+<div id="settings" class="panel card" hidden>
+  <button class="x" id="set-close">×</button><h2>Settings</h2>
+  <label>Music<input id="set-music" type="range" min="0" max="1" step=".05"></label>
+  <label>Ambient sounds<input id="set-amb" type="range" min="0" max="1" step=".05"></label>
+  <label>Partner voice volume<input id="set-voice" type="range" min="0" max="1" step=".05"></label>
+  <label>Camera sensitivity<input id="set-sens" type="range" min=".4" max="2.5" step=".1"></label>
+  <label>Graphics<select id="set-quality"><option value="high">High</option><option value="medium">Medium</option><option value="low">Low (best for phones)</option></select></label>
+  <button id="set-leave" class="btn ghost">Leave room</button>
+</div>
+
+<!-- Photo viewer -->
+<div id="viewer" hidden>
+  <button id="viewer-close" class="x big">×</button><button id="viewer-prev" class="nav">‹</button><img id="viewer-img" alt=""><button id="viewer-next" class="nav r">›</button><p id="viewer-caption" hidden></p><p id="viewer-count"></p>
+</div>
+<!-- Photo manager -->
+<div id="manager" class="screen" hidden>
+  <div class="card mgr">
+    <button class="x" id="mgr-close">×</button><h2>Photo Gallery</h2>
+    <div id="mgr-tabs" class="pills"></div>
+    <div id="mgr-grid" class="grid"></div>
+    <label class="btn primary upl">＋ Upload photos to this room<input id="mgr-upload" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden></label>
+    <input id="mgr-replace" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+    <p class="muted small">JPG, PNG or WebP · up to 12 photos per room · add a caption under each photo · changes appear instantly for both of you.</p>
+  </div>
+</div>
+<div id="toasts"></div>
+<script type="module" src="/js/main.js"></script>
+</body>
+</html>
